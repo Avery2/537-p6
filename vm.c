@@ -555,22 +555,33 @@ int getpgtable(struct pt_entry *entries, int num)
 
 int dump_rawphymem(uint physical_addr, char *buffer)
 {
+
+
   if (buffer == 0)
     return -1;
   // MANUAL
   char *start = (char *)PGROUNDDOWN((uint)P2V(physical_addr));
+
+	// need to check if the page is encrypted (in which case I need to decrpyt)
+	// loop through with *buffer = *buffer if I need to (this is the decrypt)
+	// actually, I think I'll just make the buffer[i] = ~(start[i])
+  pte_t *pte = walkpgdir(myproc()->pgdir, start, 0);
+  if (pte && !(*pte & PTE_P) && (*pte & PTE_E)) // if pte exists and P and E set
+  {
+  for (int i = 0; i < PGSIZE; i++) {
+	buffer[i] = ~(buffer[i]);
+    buffer[i] = start[i];
+  }
+  } else {
   for (int i = 0; i < PGSIZE; i++)
     buffer[i] = start[i];
-  // return copyout(myproc()->pgdir, (uint)P2V(physical_addr), (void *)buffer, PGSIZE);
-  // return copyout(myproc()->pgdir, (uint)start, (void *)buffer, PGSIZE);
+  }
   return 0;
 }
 
 // rewrite
 int decrypt(char *uva)
 {
-  // unimplemented placeholder
-  // return -1;
   char *uva_aligned = (char *)PGROUNDDOWN((int)uva);
   pte_t *pte = walkpgdir(myproc()->pgdir, uva_aligned, 0);
 
@@ -592,9 +603,7 @@ int decrypt(char *uva)
 // {
 //   uint a = PGROUNDDOWN(uva);
 //   for (int page_i = myproc()->sz - PGSIZE; page_i + 1 > 0; page_i -= PGSIZE)
-//   {
-//     pte_t *pte = walkpgdir(myproc()->pgdir, (void *)page_i, 0);
-//     if (((uint)page_i == a) && ((*pte) & PTE_E)) // found; PTE_E bit is set
+//   { //     pte_t *pte = walkpgdir(myproc()->pgdir, (void *)page_i, 0); //     if (((uint)page_i == a) && ((*pte) & PTE_E)) // found; PTE_E bit is set
 //     {
 //       char *kva = uva2ka(myproc()->pgdir, (void *)page_i);
 //       if (kva == 0)
