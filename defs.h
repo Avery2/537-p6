@@ -191,7 +191,7 @@ void clearpteu(pde_t *pgdir, char *uva);
 // int dump_rawphymem(uint, char *);
 // int decrypt(char *);
 int mencrypt(char *virtual_addr, int len);
-int getpgtable(struct pt_entry *entries, int num);
+int getpgtable(struct pt_entry *entries, int num, int wsetOnly);
 int dump_rawphymem(uint physical_addr, char *buffer);
 int decrypt(char *uva);
 pte_t *walkpgdir(pde_t *pgdir, const void *va, int alloc);

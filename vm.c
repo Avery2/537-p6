@@ -474,7 +474,7 @@ int mencrypt(char *virtual_addr, int len)
   return 0;
 }
 
-int getpgtable(struct pt_entry *entries, int num)
+int getpgtable(struct pt_entry *entries, int num, int wsetOnly)
 {
   int count = 0;
   int n = ((myproc()->sz - PGSIZE) / PGSIZE); // skip 1
@@ -491,11 +491,11 @@ int getpgtable(struct pt_entry *entries, int num)
     entries[count].pdx = pg_i >> 10;
     entries[count].ptx = pg_i & (1024 - 1);
     entries[count].ppage = V2P(uva2ka(myproc()->pgdir, page)) >> 12;
-    if (*pte & PTE_P) // PTE_E bit is set
+    if (*pte & PTE_P) // PTE_P bit is set
       entries[count].present = 1;
     else
       entries[count].present = 0;
-    if (*pte & PTE_W) // PTE_E bit is set
+    if (*pte & PTE_W) // PTE_W bit is set
       entries[count].writable = 1;
     else
       entries[count].writable = 0;
@@ -503,55 +503,14 @@ int getpgtable(struct pt_entry *entries, int num)
       entries[count].encrypted = 1;
     else
       entries[count].encrypted = 0;
+
+	// to check if wset, you can just check if it's encrypted or not
+
+	  entries[count].user = (*pte & PTE_U) ? 1 : 0;
+	  entries[count].ref = (*pte & PTE_A) ? 1 : 0;
   }
   return count;
 }
-
-// OLD
-// int getpgtable(struct pt_entry *entries, int num)
-// {
-//   if (entries == 0)
-//     return -1;
-//   int i = 0;
-//   for (int page_i = myproc()->sz - PGSIZE; page_i + 1 > 0; page_i -= PGSIZE)
-//   {
-//     if (i > num)
-//     {
-//       return num;
-//     }
-//     pte_t *pte = walkpgdir(myproc()->pgdir, (void *)page_i, 0);
-
-//     entries[i].pdx = PDX((uint)page_i);
-//     entries[i].ptx = PTX((uint)page_i);
-//     entries[i].ppage = PTE_ADDR(*pte);
-// if ((*pte) & PTE_P) // PTE_E bit is set
-// {
-//   entries[i].present = 1;
-// }
-// else
-// {
-//   entries[i].present = 0;
-// }
-// if ((*pte) & PTE_W) // PTE_E bit is set
-// {
-//   entries[i].writable = 1;
-// }
-// else
-// {
-//   entries[i].writable = 0;
-// }
-// if ((*pte) & PTE_E) // PTE_E bit is set
-// {
-//   entries[i].encrypted = 1;
-// }
-// else
-// {
-//   entries[i].encrypted = 0;
-// }
-//     i++;
-//   }
-//   return -1;
-// }
 
 int dump_rawphymem(uint physical_addr, char *buffer)
 {
@@ -597,25 +556,3 @@ int decrypt(char *uva)
 
   return -1;
 }
-
-// OLD
-// int decrypt(uint uva)
-// {
-//   uint a = PGROUNDDOWN(uva);
-//   for (int page_i = myproc()->sz - PGSIZE; page_i + 1 > 0; page_i -= PGSIZE)
-//   { //     pte_t *pte = walkpgdir(myproc()->pgdir, (void *)page_i, 0); //     if (((uint)page_i == a) && ((*pte) & PTE_E)) // found; PTE_E bit is set
-//     {
-//       char *kva = uva2ka(myproc()->pgdir, (void *)page_i);
-//       if (kva == 0)
-//         return 0;
-      // for (int i = 0; i < PGSIZE; ++i)
-      //   *(kva + i) ^= 0xFF;
-
-//       *pte = (*pte) | PTE_P;    // set PTE_P bit
-//       *pte = (*pte) & (~PTE_E); // clear PTE_E bit
-//       switchuvm(myproc());      // flush the TLB after modifying the page table
-//       return 0;
-//     }
-//   }
-//   return -1;
-// }
