@@ -425,12 +425,6 @@ int mencrypt(char *virtual_addr, int len)
         return -1;
   }
 
-  // cprintf("virtual addr: %d\n", (uint)virtual_addr);
-  // cprintf("len: %d\n", len);
-  // cprintf("first: %d\n", first);
-  // cprintf("last: %d\n", last);
-  // cprintf("\n\n");
-
   int count = 0;
   int encrypt = 0;
   for (int page_i = 0; page_i < myproc()->sz; page_i += PGSIZE)
@@ -442,17 +436,9 @@ int mencrypt(char *virtual_addr, int len)
     // cprintf("checking for page addr %d\n", page_i);
     pte_t *pte = walkpgdir(myproc()->pgdir, (void *)page_i, 0);
 
-    // uint pd = PGROUNDDOWN((uint)page_i); // first page to encrypt
-    // uint pu = PGROUNDUP((uint)page_i);   // last page (not included)
-
-    // cprintf("page: %d\tE: %d\tP: %d\n", page_i, ((*pte) & PTE_E), ((*pte) & PTE_P));
-    // cprintf("page: %d\tpd: %d\tpu: %d\tE: %d\tP: %d\n", page_i, pd, pu, ((*pte) & PTE_E), ((*pte) & PTE_P));
     // encrypt IF flagged (start at false)
     if (encrypt)
     {
-      // cprintf("try to encrpyt\n");
-      // cprintf("e\n");
-      // walkpgdir() returns a pte_t that contains pa
       if ((*pte) & PTE_P) // test PTE_P bit is set; I want to check if encrypt here eventually
       {
         // cprintf("encrypting...\n");
@@ -485,8 +471,11 @@ int getpgtable(struct pt_entry *entries, int num, int wsetOnly)
     char *page = (char *)(pg_i << 12);
     pte_t *pte = walkpgdir(myproc()->pgdir, page, 0);
 
-    if ((!pte) || (!(*pte & PTE_P) && !(*pte & PTE_E)))
+    if ((!pte) || (!(*pte & PTE_P) && !(*pte & PTE_E))) // check pte and either E and P are set
       continue;
+
+	if (wsetOnly && ( (*pte & PTE_E) || !(*pte & PTE_P) ) ) // filter working set, filter if E set or P not set
+		continue;
 
     entries[count].pdx = pg_i >> 10;
     entries[count].ptx = pg_i & (1024 - 1);

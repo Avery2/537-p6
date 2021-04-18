@@ -161,13 +161,24 @@ growproc(int n)
   uint sz;
   struct proc *curproc = myproc();
 
+	// need to encrypt here or something
+
   sz = curproc->sz;
+  int num_pages = sz / PGSIZE;
   if(n > 0){
-    if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
+    if((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0) 
       return -1;
+	// encrypt num_pages pages
+	//for (int i = 0; i < num_pages; i++) {
+		// I could do an internal call to mencrypt here
+		// I am confused on user address vs kernel address, idk how to call
+		//mencrypt(sz, num_pages);
+	//}
+	mencrypt((void*)curproc->sz, num_pages);
   } else if(n < 0){
-    if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
+    if((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0) 
       return -1;
+	// remove any pages from queue and maybe other stuff
   }
   curproc->sz = sz;
   switchuvm(curproc);

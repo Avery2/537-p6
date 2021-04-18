@@ -101,6 +101,13 @@ exec(char *path, char **argv)
   curproc->tf->esp = sp;
   switchuvm(curproc);
   freevm(oldpgdir);
+
+  // encrypt here
+	// I probably want to scan from 0 to sz and ancrypt anything that isn't already encrptyed or in the working set
+	// check with uv2k? that this is a valid user address
+	//  Encrypt all those pages set up by the exec function at the end of the exec function. These pages include program text, data, and stack pages. These pages are not allocated through growproc() and thus not handle by the first case.
+	mencrypt(0, curproc->sz);
+
   return 0;
 
  bad:
